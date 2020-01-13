@@ -101,7 +101,7 @@ app.put('/api/user1', (req, res) => {
 		}
     });
 });
-app.post('/api/register', (req, res) => {
+app.put('/api/register', (req, res) => {
   let username = req.body.username;
   let password = req.body.pass;
   let fname = req.body.fname;
@@ -116,15 +116,21 @@ if(err){
 }else{
 	dbConn.query("INSERT INTO userlogindata (username, password) VALUES(?, ?)",[username,password], function(err, result) {
 	if(err){
-	return res.send({ error: false, message: err });
+	dbConn.rollback(function() {
+            return res.send({ error: false, message: err });
+          });
 	}else{
 	dbConn.query("INSERT INTO userprofiledata (userid, username, firstname,lastname, mobile,emailid) VALUES((SELECT userid FROM userlogindata where username = ?),?,?,?,?,?)", [username,username,fname,lname,mobile,email], function(err, result) {
 		if(err){
-		return res.send({ error: false, message: err });
+		dbConn.rollback(function() {
+            return res.send({ error: false, message: err });
+          });
 		}else{
 		dbConn.commit(function(err) {
 		if(err){
-		return res.send({ error: false, message: err });
+		dbConn.rollback(function() {
+            return res.send({ error: false, message: err });
+          });
 		}else{
 		return res.send({ error: false, message: 'Update Successful' });
 		}
