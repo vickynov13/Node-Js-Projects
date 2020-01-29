@@ -22,9 +22,22 @@ var dbConn = mysql.createConnection({
 dbConn.connect();
 
 app.get('/api', (req, res) => {
-  res.json({
-    message: 'Welcome to the API'
-  });
+	let name = 'vicky';
+	//res.writeHead(200, {'Content-Type': 'JSON'});
+	jwt.sign({name}, 'secretkey', { expiresIn: '1h' }, (err, token) => {
+		console.log('read json')
+		//res.json({ error:false, data : results, message : 'user has been updated successfully', token});
+			//res.end();
+		res.status(201);
+		res.json({ error:false, message : 'user has been updated successfully out', token});
+		});
+		
+		
+	 
+	
+	
+	//res.write('{ message: Welcome to the API }');
+	
 });
 
 app.post('/api/posts', verifyToken, (req, res) => {  
@@ -42,6 +55,30 @@ app.post('/api/posts', verifyToken, (req, res) => {
 
 app.post('/api/login', (req, res) => {
   // Mock user
+  let username = req.body.username;
+  let pass = req.body.pass;
+  let deviceid = req.body.deviceid;
+  console.log(req.body);
+  if (!username || !pass) {
+        return res.status(400).send({ error: true, message: 'Please provide Username and Password' });
+    }else{
+		//dbConn.query("select userprofiledata.firstname as fname , userprofiledata.lastname as lname , userprofiledata.mobile as mobile , userprofiledata.emailid as email from userprofiledata, userlogindata where userlogindata.userid = (select userlogindata.userid from userlogindata where userlogindata.username=? and userlogindata.password=?) and  userlogindata.userid = userprofiledata.userid", [username, pass], function (error, results, fields) {
+		dbConn.query("SELECT COUNT(userid) FROM userlogindata where username=? and password=?", [username, pass], function (error, results, fields) {	
+        if (error){
+			return res.send({ error: false, message:'Invalid Username / Password'});
+		} else {
+			console.log('login success')
+			return res.send({error: false, data: results });
+		}
+    });
+	}
+});
+
+
+
+
+app.put('/api/login1', (req, res) => {
+  // Mock user
   let name = req.body.name;
   let email = req.body.email;
  
@@ -49,6 +86,7 @@ app.post('/api/login', (req, res) => {
         if (error){
 			res.sendStatus(403);
 		} else {
+			
 			jwt.sign({name}, 'secretkey', { expiresIn: '30s' }, (err, token) => {
 			res.json({
 			error: false, data: results,
@@ -173,5 +211,5 @@ var options ={
 }
 https.createServer(options, app)
 .listen(4050, function () {
-  console.log('service running on https://localhost:4050/')
+  console.log('service running on https://localhost/')
 })
