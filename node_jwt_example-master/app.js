@@ -31,12 +31,19 @@ app.get('/api', (req, res) => {
 		res.status(201);
 		res.json({ error:false, message : 'user has been updated successfully out', token});
 		});
-		
-		
-	 
-	
-	
 	//res.write('{ message: Welcome to the API }');
+});
+
+app.post('/api/getusermain', (req, res) => {
+	let userid = req.body.userid;
+	dbConn.query("SELECT firstname, lastname, mobile, emailid from userprofiledata where userid = ?", [userid], function (error, results, fields) {	
+        if (error){
+			return res.send({ error: false, message:'Invalid Username / Password'});
+		} else {
+			//console.log('login success')
+			return res.send({error: false, data: results });
+		}
+    });
 	
 });
 
@@ -53,7 +60,7 @@ app.post('/api/posts', verifyToken, (req, res) => {
   });
 });
 
-app.post('/api/login', (req, res) => {
+app.post('/api/logins', (req, res) => {
   // Mock user
   let username = req.body.username;
   let pass = req.body.pass;
@@ -69,6 +76,34 @@ app.post('/api/login', (req, res) => {
 		} else {
 			console.log('login success')
 			return res.send({error: false, data: results });
+		}
+    });
+	}
+});
+
+app.post('/api/login', (req, res) => {
+  // Mock user
+  let username = req.body.username;
+  let pass = req.body.pass;
+  let deviceid = req.body.deviceid;
+  console.log(req.body);
+  if (!username || !pass) {
+        return res.status(400).send({ error: true, message: 'Please provide Username and Password' });
+    }else{
+		//dbConn.query("select userprofiledata.firstname as fname , userprofiledata.lastname as lname , userprofiledata.mobile as mobile , userprofiledata.emailid as email from userprofiledata, userlogindata where userlogindata.userid = (select userlogindata.userid from userlogindata where userlogindata.username=? and userlogindata.password=?) and  userlogindata.userid = userprofiledata.userid", [username, pass], function (error, results, fields) {
+		dbConn.query("SELECT COUNT(userid) FROM userlogindata where username=? and password=?", [username, pass], function (error, results, fields) {	
+        if (error){
+			//return res.send({ error: false, message:'Invalid Username / Password'});
+		} else {
+			dbConn.query("select userid from userlogindata where username=? and password=?", [username, pass], function (error, results1, fields) {	
+				if (error){
+					return res.send({ error: false, message:'Could not get data'});
+				} else {
+					console.log('login success')
+					return res.send({error: false, data: results, data1: results1 });
+				}
+			});
+			//return res.send({error: false, data: results });
 		}
     });
 	}
