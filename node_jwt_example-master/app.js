@@ -34,6 +34,37 @@ app.get('/api', (req, res) => {
 	//res.write('{ message: Welcome to the API }');
 });
 
+
+
+app.post('/api/usersearchresult', (req, res) => {
+	let userinput = req.body.userinput;
+	dbConn.query("SELECT CONCAT(UCASE(LEFT( firstname, 1)), LCASE(SUBSTRING( firstname, 2)), ' ', UCASE(LEFT( lastname, 1)), LCASE(SUBSTRING( lastname, 2))) as name, username from userprofiledata where (username like ? or firstname like ? or lastname like ?)", ['%'+userinput+'%', '%'+userinput+'%', '%'+userinput+'%'], function (error, results, fields) {	
+        if (error){
+			return res.send({ error: false, message: error});
+		} else {
+			//console.log('login success')
+			return res.send({error: false, data: results });
+		}
+    });
+	
+});
+
+
+
+
+app.post('/api/getusertodos', (req, res) => {
+	let userid = req.body.userid;
+	dbConn.query("select todomessage from userstodos where username =(select username from userprofiledata where userid = ?)", [userid], function (error, results, fields) {	
+        if (error){
+			return res.send({ error: false, message:'Invalid Username / Password'});
+		} else {
+			//console.log('login success')
+			return res.send({error: false, data: results });
+		}
+    });
+	
+});
+
 app.post('/api/getusermain', (req, res) => {
 	let userid = req.body.userid;
 	dbConn.query("SELECT firstname, lastname, mobile, emailid from userprofiledata where userid = ?", [userid], function (error, results, fields) {	
