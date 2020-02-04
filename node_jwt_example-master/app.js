@@ -38,7 +38,7 @@ app.get('/api', (req, res) => {
 
 app.post('/api/usersearchresult', (req, res) => {
 	let userinput = req.body.userinput;
-	dbConn.query("SELECT CONCAT(UCASE(LEFT( firstname, 1)), LCASE(SUBSTRING( firstname, 2)), ' ', UCASE(LEFT( lastname, 1)), LCASE(SUBSTRING( lastname, 2))) as name, username from userprofiledata where (username like ? or firstname like ? or lastname like ?)", ['%'+userinput+'%', '%'+userinput+'%', '%'+userinput+'%'], function (error, results, fields) {	
+	dbConn.query("SELECT CONCAT(UCASE(LEFT( firstname, 1)), LCASE(SUBSTRING( firstname, 2)), ' ', UCASE(LEFT( lastname, 1)), LCASE(SUBSTRING( lastname, 2))) as name, username from userprofiledata where (username = ? or firstname like ? or lastname like ?)", [userinput, '%'+userinput+'%', '%'+userinput+'%'], function (error, results, fields) {	
         if (error){
 			return res.send({ error: false, message: error});
 		} else {
@@ -52,9 +52,39 @@ app.post('/api/usersearchresult', (req, res) => {
 
 
 
+app.post('/api/addtolist', (req, res) => {
+	let username = req.body.username;
+	let todomessage = req.body.userinput;
+	let updatedby = req.body.updatedby;
+	let secret = req.body.secret;
+	dbConn.query("INSERT INTO userstodos (username, todomessage, secret, updatedby) VALUES(?,?,?,?)", [username, todomessage, secret, updatedby], function (error, results, fields) {	
+        if (error){
+			return res.send({ error: false, message: error});
+		} else {
+			//console.log('login success')
+			return res.send({error: false, data: results });
+		}
+    });
+	
+});
+app.post('/api/getmytodos', (req, res) => {
+	let username = req.body.username;
+	dbConn.query("select todomessage, msgid, completed  from userstodos where username = ?", [username], function (error, results, fields) {	
+        if (error){
+			return res.send({ error: false, message:'Invalid Username / Password'});
+		} else {
+			//console.log('login success')
+			return res.send({error: false, data: results });
+		}
+    });
+	
+});
+
+
 app.post('/api/getusertodos', (req, res) => {
-	let userid = req.body.userid;
-	dbConn.query("select todomessage from userstodos where username =(select username from userprofiledata where userid = ?)", [userid], function (error, results, fields) {	
+	let username = req.body.guestusername;
+	let updatedby = req.body.username;
+	dbConn.query("select todomessage from userstodos where username = ? and (secret='no' or updatedby=?)", [username, updatedby], function (error, results, fields) {	
         if (error){
 			return res.send({ error: false, message:'Invalid Username / Password'});
 		} else {
@@ -66,8 +96,8 @@ app.post('/api/getusertodos', (req, res) => {
 });
 
 app.post('/api/getusermain', (req, res) => {
-	let userid = req.body.userid;
-	dbConn.query("SELECT firstname, lastname, mobile, emailid from userprofiledata where userid = ?", [userid], function (error, results, fields) {	
+	let username = req.body.username;
+	dbConn.query("SELECT firstname, lastname, mobile, emailid from userprofiledata where username = ?", [username], function (error, results, fields) {	
         if (error){
 			return res.send({ error: false, message:'Invalid Username / Password'});
 		} else {
