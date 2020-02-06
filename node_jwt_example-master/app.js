@@ -35,6 +35,42 @@ app.get('/api', (req, res) => {
 });
 
 
+app.post('/api/getuserrequests', (req, res) => {
+	let guestname = req.body.myname;
+	dbConn.query("SELECT CONCAT(UCASE(LEFT( firstname, 1)), LCASE(SUBSTRING( firstname, 2)), ' ', UCASE(LEFT( lastname, 1)), LCASE(SUBSTRING( lastname, 2))) as name, username from userprofiledata where username in (select myname from userlistaccess where guestname =? and accessstatus = 'notconfirmed')", [guestname], function (error, results, fields) {	
+        if (error){
+			return res.send({ error: false, message: error});
+		} else {
+			//console.log('login success')
+			return res.send({error: false, data: results });
+		}
+    });
+	
+});
+
+
+app.post('/api/grantaccess', (req, res) => {
+	let guestname = req.body.myname;
+	let myname = req.body.guestname;
+	dbConn.query("UPDATE userlistaccess SET accessstatus = 'confirmed' where myname =? and guestname=?", [myname,guestname], function (error, results, fields) {	
+        if (error){
+			return res.send({ error: true});
+		} else {
+			//console.log('login success')
+			return res.send({error: false});
+		}
+    });
+	
+});
+
+
+
+
+
+
+
+
+
 
 app.post('/api/usersearchresult', (req, res) => {
 	let userinput = req.body.userinput;
@@ -71,7 +107,7 @@ app.post('/api/getmytodos', (req, res) => {
 	let username = req.body.username;
 	dbConn.query("select todomessage, msgid, completed  from userstodos where username = ?", [username], function (error, results, fields) {	
         if (error){
-			return res.send({ error: false, message:'Invalid Username / Password'});
+			return res.send({ error: true, message:'Invalid Username / Password'});
 		} else {
 			//console.log('login success')
 			return res.send({error: false, data: results });
@@ -79,6 +115,55 @@ app.post('/api/getmytodos', (req, res) => {
     });
 	
 });
+
+app.post('/api/getguestaccess', (req, res) => {
+	let myname = req.body.myusername;
+	let guestname = req.body.guestusername;
+	dbConn.query("select count(guestname) as exist from userlistaccess where myname = ? and guestname = ? and accessstatus = 'confirmed'", [myname, guestname], function (error, results, fields) {	
+        if (error){
+			return res.send({ error: false, message:'Invalid Username / Password'});
+		} else {
+			//console.log('login success')
+			var row = results[0];
+			let dt = row.exist;
+			if (dt>=1) {
+					return res.send({ check: 'granted'});
+				} else {
+					return res.send({ check: 'denied'});
+				}
+		}
+    });
+	
+});
+
+
+app.post('/api/createaccessreq', (req, res) => {
+	let myname = req.body.myusername;
+	let guestname = req.body.guestusername;
+	dbConn.query("select count(guestname) as exist from userlistaccess where myname = ? and guestname = ?", [myname, guestname], function (error, results, fields) {	
+        if (error){
+			return res.send({ error: true});
+		} else {
+			var row = results[0];
+			let dt = row.exist;
+			if (dt>=1) {
+					return res.send({ error: true});
+				} else {
+					dbConn.query("insert into userlistaccess (myname, guestname) values (?,?)", [myname, guestname], function (error, results, fields) {	
+						if (error){
+							return res.send({ error: true});
+						} else {
+			//console.log('login success')
+							return res.send({error: false});
+						}
+					});
+				}
+			}
+		});
+});
+
+
+
 
 
 app.post('/api/getusertodos', (req, res) => {
